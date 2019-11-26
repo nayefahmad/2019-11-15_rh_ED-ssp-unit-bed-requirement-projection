@@ -345,7 +345,8 @@ df5.time_in_queue_scenarios %>%
   labs(x = "Average occupancy (avg census/num beds)", 
        y = "Wait time before entering bed (hours)", 
        title = "RH: Determining number of acute SSP beds required", 
-       subtitle = "Each curve results from varying num beds at a specific level of avg. arrival rate \nPoint labels represent number of beds \n\nBlue: System as of 2018 \nRed: 40% increase in avg. arrival rate (2030 scenario)") + 
+       subtitle = "Each curve results from varying num beds at a specific level of avg. arrival rate \nPoint labels represent number of beds \n\nBlue: System as of 2018 \nRed: 40% increase in avg. arrival rate (2030 scenario)",
+       caption = "\nCalculations are based on an M/M/c queueing system. \nSee any standard queueing theory text for details (e.g. Gross et. al., pp 71-74). \nCode implementation: http://tiny.cc/cwevgz") + 
   
   annotate("segment", 
            x = df5.time_in_queue_scenarios$traffic_intensity_current[3], 
@@ -377,12 +378,46 @@ df5.time_in_queue_scenarios %>%
   theme(panel.grid.minor = element_line(colour = "grey95"), 
         panel.grid.major = element_line(colour = "grey95"),
         axis.text = element_text(size = 12), 
-        axis.title = element_text(size = 12))
+        axis.title = element_text(size = 12), 
+        plot.caption = element_text(size = 7))
   
                            
 # 7) -----------------------------------------------
 #' # Key takeaways 
 #' 
+ 
+#' 1. **Queue performance deteriorates in a higly nonlinear way** as average
+#' occupancy increases.
+#'
+#' 2. **Simple rules of thumb about target occupancy levels can be dangerously
+#' misleading**, especially in small systems (e.g. units with small number of
+#' beds). In this example, note that avg occupancy in current state is "only"
+#' about 22%, so one might think there is no harm in reducing the number of beds
+#' from 4 to 3. However, this will lead to an almost 500% increase in wait time
+#' to get into a bed. Is it worth it? Maybe, but the decision-maker must know
+#' about the tradeoff involved.
+#'
+#' 3. **There are two alternative decision paradigms: "Quality-focused" and
+#' "Cost-focused"**. ^[Gross, et. al. Fundamentals of Queueing Theory. pp 71-74]
 #' 
+#'     i) **Quality-focused**: choose number of beds so that average occupancy is the same or lower than current value.
+#'     
+#'     ii) **Cost-focused**: choose number of beds so that average wait time to get into a bed is the same or lower than current value.
+#'     
+
+# 8) ---------------------------------------------
+#' # Bed requirements 
+#' 
+#' Rule i) suggests that 6 inpatient SSP beds will be required by 2030. 
+#' 
+#' Rule ii) suggests that 5 inpatient SSP beds will be required by 2030. 
+#' 
+#' 
+#' 
+
+
+#' # Appendix 
+#' 
+
 
 
