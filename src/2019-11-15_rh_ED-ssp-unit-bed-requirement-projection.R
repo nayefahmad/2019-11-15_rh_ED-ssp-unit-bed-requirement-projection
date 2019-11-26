@@ -94,8 +94,6 @@ vw_census %>%
 
 
 
-#' # SSP patients - ED LOS
-#' 
 
 # 4) ----------------------------------------------------------
 #' # SSP patients - census days in 2018 
@@ -207,8 +205,9 @@ avg_los <- df3.census_los$n %>% mean  # unit = days
 lambda = avg_inventory/avg_los
 
 # c = 1  # num beds
+# rho = lambda/c*mu  # traffic intensity 
 mu = 1/avg_los  # avg turnover per bed per day 
-rho = lambda/c*mu  # traffic intensity 
+
 
 
 #' Find avg TIS in current state as we vary c, num beds: 
@@ -318,18 +317,18 @@ df5.time_in_queue_scenarios %>%
   stat_smooth(se = FALSE, 
               fullrange = TRUE) + 
   
-  # new layer: scenario where arrival rate increases by 50% 
-  geom_point(aes(x = traffic_intensity_50_perc_increase,
-                 y = increase_by_50_percent), 
+  # new layer: scenario where arrival rate increases by 40% 
+  geom_point(aes(x = traffic_intensity_40_perc_increase,
+                 y = increase_by_40_percent), 
              alpha = 0.8, 
              col = "red") + 
-  stat_smooth(aes(x = traffic_intensity_50_perc_increase,
-                  y = increase_by_50_percent),
+  stat_smooth(aes(x = traffic_intensity_40_perc_increase,
+                  y = increase_by_40_percent),
               se = FALSE, 
               fullrange = TRUE, 
               col = "red") + 
-  geom_text(aes(x = traffic_intensity_50_perc_increase,
-                y = increase_by_50_percent,
+  geom_text(aes(x = traffic_intensity_40_perc_increase,
+                y = increase_by_40_percent,
                 label = num_beds),
             alpha = 0.4,
             size = 3,
@@ -344,7 +343,7 @@ df5.time_in_queue_scenarios %>%
   labs(x = "Traffic intensity", 
        y = "Wait time in queue (hours)", 
        title = "Determining number of acute SSP beds necessary", 
-       subtitle = "Each curve results from varying num beds at a specific level of avg. arrival rate \n\nBlue: Current system \nRed: 50% increase in avg. arrival rate") + 
+       subtitle = "Each curve results from varying num beds at a specific level of avg. arrival rate \nPoint labels represent number of beds \n\nBlue: System as of 2018 \nRed: 40% increase in avg. arrival rate (2030 scenario)") + 
   
   annotate("segment", 
            x = df5.time_in_queue_scenarios$traffic_intensity_current[3], 
