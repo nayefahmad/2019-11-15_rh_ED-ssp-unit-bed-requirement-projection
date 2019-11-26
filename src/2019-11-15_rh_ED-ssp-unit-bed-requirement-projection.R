@@ -45,6 +45,7 @@ end_param <- "2018-12-31"
 
 # 3) ----------------------------------------------------------
 #' # Identifying SSP patients 
+#' 
 #' In ED: Identify SSP patients using `LastEmergencyAreaDescription` = `Shortstay Peds - ED` 
 #' 
 #' Or do we use `irstEmergencyAreaExclTriageAreaDescription `??
@@ -299,6 +300,7 @@ df5.time_in_queue_scenarios %>%
 
 # 6) ----------------------------------------------------
 #' ## Plot wait time vs traffic intensity 
+#' 
 #' Let's look at the relationship between rho and W_q for this system
 #' in current state: 
 #' 
@@ -309,8 +311,8 @@ df5.time_in_queue_scenarios %>%
   geom_point(alpha = 0.8, 
              col = "blue") + 
   geom_text(aes(label = num_beds),
-            alpha = 0.4,
-            size = 3,
+            alpha = 0.3,
+            size = 5,
             col = "blue", 
             vjust = "bottom", 
             nudge_y = .1) +
@@ -330,8 +332,8 @@ df5.time_in_queue_scenarios %>%
   geom_text(aes(x = traffic_intensity_40_perc_increase,
                 y = increase_by_40_percent,
                 label = num_beds),
-            alpha = 0.4,
-            size = 3,
+            alpha = 0.3,
+            size = 5,
             col = "red", 
             vjust = "top", 
             nudge_y = -.05) +
@@ -340,9 +342,9 @@ df5.time_in_queue_scenarios %>%
   coord_cartesian(ylim = c(0, 3), 
                   xlim = c(0.10, .40)) +
   
-  labs(x = "Traffic intensity", 
-       y = "Wait time in queue (hours)", 
-       title = "Determining number of acute SSP beds necessary", 
+  labs(x = "Average occupancy (avg census/num beds)", 
+       y = "Wait time before entering bed (hours)", 
+       title = "RH: Determining number of acute SSP beds required", 
        subtitle = "Each curve results from varying num beds at a specific level of avg. arrival rate \nPoint labels represent number of beds \n\nBlue: System as of 2018 \nRed: 40% increase in avg. arrival rate (2030 scenario)") + 
   
   annotate("segment", 
@@ -356,8 +358,31 @@ df5.time_in_queue_scenarios %>%
            y = 1.6, 
            label = "Current state") +
   
+  # year labels 
+  annotate("text", 
+           x = .325,
+           y = 2.5, 
+           label = "2018", 
+           col = "blue", 
+           size = 5) +
+  annotate("text", 
+           x = .385,
+           y = 2.5, 
+           label = "2030", 
+           col = "red", 
+           size = 5) +
+  
+  
   theme_light() +
   theme(panel.grid.minor = element_line(colour = "grey95"), 
-        panel.grid.major = element_line(colour = "grey95"))
+        panel.grid.major = element_line(colour = "grey95"),
+        axis.text = element_text(size = 12), 
+        axis.title = element_text(size = 12))
   
                            
+# 7) -----------------------------------------------
+#' # Key takeaways 
+#' 
+#' 
+
+
