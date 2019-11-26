@@ -39,7 +39,7 @@ source(here::here("src",
 #' # Parameters  
 #' 
 start_param <- "2018-01-01"
-end_param <- "2019-11-24"
+end_param <- "2018-12-31"
 
 
 #' # Identifying SSP patients 
@@ -104,6 +104,7 @@ df1.census <-
   vw_census %>% 
   filter(FacilityLongName == "Richmond Hospital", 
          CensusDate >= start_param, 
+         CensusDate <= end_param,
          NursingUnit == "RHS Short Stay Pediatrics") %>% 
   select(PatientID,
          AccountNum,
@@ -146,6 +147,8 @@ df2.census_by_day %>%
   datatable(extensions = 'Buttons',
             options = list(dom = 'Bfrtip', 
                            buttons = c('excel', "csv")))
+
+summary(df2.census_by_day)
 
 df2.census_by_day %>% 
   ggplot(aes(x = dates_fill, 
