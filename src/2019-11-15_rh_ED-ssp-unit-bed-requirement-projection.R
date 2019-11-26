@@ -25,7 +25,10 @@ setup_sql_server()
 cnx <- DBI::dbConnect(odbc::odbc(), dsn = "cnx_SPDBSCSTA001")
 vw_census <- dplyr::tbl(cnx, dbplyr::in_schema("[ADTCMart].[ADTC]", 
                                                "[CensusView]"))
-
+source(here::here("src", 
+                  "p_0_pdf_function.R"))
+source(here::here("src",
+                  "avg.time.in.system_mmc_function.R")) 
 
 #+ rest 
 
@@ -33,6 +36,10 @@ vw_census <- dplyr::tbl(cnx, dbplyr::in_schema("[ADTCMart].[ADTC]",
 #' 
 #' 
 
+#' # Parameters  
+#' 
+start_param <- "2018-01-01"
+end_param <- "2019-11-24"
 
 
 #' # Identifying SSP patients 
@@ -45,7 +52,7 @@ vw_census <- dplyr::tbl(cnx, dbplyr::in_schema("[ADTCMart].[ADTC]",
 
 vw_ed_mart %>% 
   filter(FacilityShortName == "RHS",
-         StartDate >= "2017-01-01") %>% 
+         StartDate >= start_param) %>% 
   select(FirstEmergencyAreaCode,
          FirstEmergencyAreaDescription) %>% 
   collect() %>% 
@@ -55,7 +62,7 @@ vw_ed_mart %>%
 
 vw_ed_mart %>% 
   filter(FacilityShortName == "RHS",
-         StartDate >= "2017-01-01") %>% 
+         StartDate >= start_param) %>% 
   select(FirstEmergencyAreaExclTriageAreaDescription) %>% 
   collect() %>% 
   count(FirstEmergencyAreaExclTriageAreaDescription) 
@@ -63,7 +70,7 @@ vw_ed_mart %>%
 
 vw_ed_mart %>% 
   filter(FacilityShortName == "RHS",
-         StartDate >= "2017-01-01") %>% 
+         StartDate >= start_param) %>% 
   select(LastEmergencyAreaDescription) %>% 
   collect() %>% 
   count(LastEmergencyAreaDescription) 
@@ -72,7 +79,7 @@ vw_ed_mart %>%
 # census 
 vw_census %>% 
   filter(FacilityLongName == "Richmond Hospital", 
-         CensusDate >= "2017-01-01") %>% 
+         CensusDate >= start_param) %>% 
   select(NursingUnit) %>% 
   collect( ) %>% 
   count(NursingUnit) %>% 
@@ -96,7 +103,7 @@ vw_census %>%
 df1.census <- 
   vw_census %>% 
   filter(FacilityLongName == "Richmond Hospital", 
-         CensusDate >= "2017-01-01", 
+         CensusDate >= start_param, 
          NursingUnit == "RHS Short Stay Pediatrics") %>% 
   select(PatientID,
          AccountNum,
@@ -112,8 +119,8 @@ df1.census <-
   mutate(census_count = 1) %>% 
   
   fill_dates(CensusDate, 
-             "2017-01-01",
-             "2019-11-24") %>% 
+             start_param,
+             end_param) %>% 
   
   replace_na(list("census_count" = 0))
 
@@ -152,5 +159,112 @@ df2.census_by_day %>%
              y = census)) +
   geom_boxplot() 
 
+df2.census_by_day$census %>% quantile(c(.05, .2, .5, .8, .95))
+
+#' ## Group by patient 
+#' How many nights does each patient stay??
+#' 
+
+df3.census_los <- 
+  df1.census %>% 
+  count(PatientID, 
+        AccountNum) %>% 
+  arrange(desc(n))
   
-  
+df3.census_los %>% 
+  datatable(extensions = 'Buttons',
+            options = list(dom = 'Bfrtip', 
+                           buttons = c('excel', "csv")))
+                           
+df3.census_los %>% 
+  filter(AccountNum != "") %>% 
+  ggplot(aes(x = 1, 
+             y = n)) +
+  geom_boxplot() + 
+  labs(y = "nights in census per stay")
+
+df3.census_los$n %>% quantile(c(.05, .2, .5, .8, .95))
+
+
+#' # Queue analysis  
+#' ## Parameters 
+#' 
+
+avg_inventory <- df2.census_by_day$census %>% mean
+avg_los <- df3.census_los$n %>% mean  # unit = days 
+
+# Little's law: 
+lambda = avg_inventory/avg_los
+
+c = 1  # num beds
+mu = 1/avg_los  # avg turnover per bed per day 
+rho = lambda/c*mu  # traffic intensity 
+
+
+#' Find avg TIS in current state as we vary c, num beds: 
+#' 
+tis_1 <- sapply(2:10,  # varying c 
+          avg.tis_mmc,  # function to lapply 
+          lambda = lambda,  # other args 
+          mu = mu)
+
+#' What if we scale lambda by some factor? This is what 
+#' will happen as the population increases. 
+#' 
+
+# define a fn: 
+tis_after_scaling <- function(avg_tis_fn = avg.tis_mmc,
+                              scale_param){
+  sapply(2:10,  # varying c 
+         avg.tis_mmc,  # function to lapply 
+         lambda = lambda * scale_param,  # other args 
+         mu = mu)
+}
+
+#' Vary the scale params; 
+#' 
+tis_2 <- tis_after_scaling(scale_param = 1.1)
+tis_3 <- tis_after_scaling(scale_param = 1.2)
+tis_4 <- tis_after_scaling(scale_param = 1.3)
+tis_5 <- tis_after_scaling(scale_param = 1.4)
+
+
+
+
+#' ## Avg TIS scenarios as arrival rate increases 
+#' All figures in days 
+#' 
+
+df4.tis_scenarios <- 
+  data.frame(num_beds = 2:10, 
+           tis_current = tis_1,
+           increase_by_10_percent = tis_2, 
+           increase_by_20_percent = tis_3, 
+           increase_by_30_percent = tis_4, 
+           increase_by_40_percent = tis_5) # %>% 
+
+df4.tis_scenarios %>% 
+  datatable(extensions = 'Buttons',
+            options = list(dom = 'Bfrtip', 
+                           buttons = c('excel', "csv"))) %>% 
+  formatRound(2:6, 3)
+                           
+             
+#' ## Avg wait in queue scenarios as arrival rate increases 
+#' All figures in hours
+#' 
+
+df5.time_in_queue_scenarios <- 
+  data.frame(num_beds = 2:10, 
+             wait_in_queue_current = (tis_1 - avg_los)*24,
+             increase_by_10_percent = (tis_2 - avg_los)*24, 
+             increase_by_20_percent = (tis_3 - avg_los)*24, 
+             increase_by_30_percent = (tis_4 - avg_los)*24, 
+             increase_by_40_percent = (tis_5 - avg_los)*24) # %>% 
+
+df5.time_in_queue_scenarios %>% 
+  datatable(extensions = 'Buttons',
+            options = list(dom = 'Bfrtip', 
+                           buttons = c('excel', "csv"))) %>% 
+  formatRound(2:6, 3)
+                           
